@@ -1,0 +1,45 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: a69031f495c5cc19743992fc4fad731ff7ebe7c5faa0e1f756c325b384ad8da6
+
+name:           mira-chess
+version:        0.1.0.0
+category:       Web
+homepage:       https://github.com/githubuser/mira-chess#readme
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2020 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+executable mira-chess
+  main-is: Main.hs
+  other-modules:
+      AppState
+      Events
+      Handler
+      UI.MyComponents.ChessBoard
+      UI.MyMarkup
+      UI.MyRunner
+      UI.Root
+      Paths_mira_chess
+  hs-source-dirs:
+      src
+  default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving
+  build-depends:
+      base >=4.7 && <5
+    , chessIO
+    , containers
+    , gi-gtk
+    , gtk-hotreload
+    , reactive-markup
+    , reactive-markup-gtk
+    , text
+  default-language: Haskell2010

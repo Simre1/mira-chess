@@ -1,0 +1,44 @@
+name:                mira-chess
+version:             0.1.0.0
+#synopsis:
+#description:
+homepage:            https://github.com/githubuser/mira-chess#readme
+license:             BSD3
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2020 Author name here
+category:            Web
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - text
+  - containers
+  - chessIO
+  - reactive-markup
+  - reactive-markup-gtk
+  - gtk-hotreload
+  - gi-gtk
+
+executables:
+  mira-chess:
+    source-dirs:      src
+    main:             Main.hs
+
+default-extensions:
+  - OverloadedLabels
+  - OverloadedStrings
+  - GADTs
+  - MultiParamTypeClasses
+  - TypeFamilies
+  - TypeOperators
+  - DataKinds
+  - DeriveFunctor
+  - FlexibleContexts
+  - FlexibleInstances
+  - ScopedTypeVariables
+  - RankNTypes
+  - TypeApplications
+  - FunctionalDependencies
+  - GeneralizedNewtypeDeriving

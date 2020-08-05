@@ -1,0 +1,3 @@
+[submodule "reactive-markup"]
+	path = reactive-markup
+	url = https://github.com/Simre1/reactive-markup.git

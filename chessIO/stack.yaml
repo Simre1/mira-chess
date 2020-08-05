@@ -1,0 +1,5 @@
+resolver: lts-16.6
+packages:
+- .
+extra-deps:
+- o-clock-1.0.0.1

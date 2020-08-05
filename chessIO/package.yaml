@@ -1,0 +1,83 @@
+name:        chessIO
+version:     0.3.1.2
+github:      "mlang/chessIO"
+license:     BSD3
+author:      "Mario Lang"
+maintainer:  "mlang@blind.guru"
+copyright:   "2020 Mario Lang"
+
+synopsis:    Basic chess library
+category:    Game
+description: A simple library for generating legal chess moves.
+  Also includes a module for communication with external processes that
+  speak the UCI (Universal Chess Interface) protocol, a PGN parser/pretty printer,
+  and Polyglot opening book support.
+  On top of that, provides a console frontend program (cboard) that can be used
+  to interactively play against UCI engines.
+
+dependencies:
+- attoparsec
+- base >= 4.10 && < 5
+- binary
+- bytestring
+- containers
+- file-embed
+- megaparsec
+- MonadRandom
+- o-clock
+- parser-combinators
+- prettyprinter
+- process
+- random
+- stm
+- text
+- unordered-containers
+- vector
+
+default-extensions:
+- BangPatterns
+- BinaryLiterals
+- BlockArguments
+- DeriveGeneric
+- FlexibleContexts
+- GeneralizedNewtypeDeriving
+- LambdaCase
+- MultiParamTypeClasses
+- NamedFieldPuns
+- NumericUnderscores
+- RecordWildCards
+- OverloadedStrings
+- PatternSynonyms
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- ViewPatterns
+
+extra-source-files:
+- README.rst
+- book/twic-9g.bin
+
+ghc-options:
+- -Wall
+- -O2
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Game.Chess
+  - Game.Chess.PGN
+  - Game.Chess.Polyglot.Book
+  - Game.Chess.Polyglot.Hash
+  - Game.Chess.QuadBitboard
+  - Game.Chess.UCI
+
+tests:
+  perft:
+    main:                Perft.hs
+    source-dirs:  test
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -s"
+    dependencies:
+    - chessIO
+    - directory
+    - parallel
+    - time

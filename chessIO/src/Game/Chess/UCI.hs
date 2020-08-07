@@ -183,7 +183,9 @@ command pos = skipSpace *> choice
     pure $ Score s b
   pv = fmap (PV . snd) $ foldM toPly (pos, []) =<< sepBy mv skipSpace
   toPly (pos, xs) s = case fromUCI pos s of
-    Just m -> pure (doPly pos m, xs <> [m])
+    Just m -> case doPly pos m of
+      Just newPos -> pure (newPos, xs <> [m])
+      Nothing -> fail $ "Invalid move"
     Nothing -> fail $ "Failed to parse move " <> s
   currmove = fmap (fromUCI pos) mv >>= \case
     Just m -> pure $ CurrMove m
@@ -202,9 +204,11 @@ command pos = skipSpace *> choice
     case fromUCI pos m of
       Just m' -> case ponder of
         Nothing -> pure $ BestMove (m', Nothing)
-        Just p -> case fromUCI (doPly pos m') p of
-          Just p' -> pure $ BestMove (m', Just p')
-          Nothing -> fail $ "Failed to parse ponder move " <> p
+        Just p -> case doPly pos m' of
+          Just pos -> case fromUCI pos p of
+            Just p' -> pure $ BestMove (m', Just p')
+            Nothing -> fail $ "Failed to parse ponder move " <> p
+          Nothing -> fail $ "Invalid move"
       Nothing -> fail $ "Failed to parse best move " <> m
   kv k v = k *> skipSpace *> v
 
@@ -364,7 +368,7 @@ setOptionString n v e = liftIO $ do
 -- | Return the final position of the currently active game.
 currentPosition :: MonadIO m => Engine -> m Position
 currentPosition Engine{game} = liftIO $
-  uncurry (foldl' doPly) <$> readIORef game
+  uncurry (foldl' unsafeDoPly) <$> readIORef game
 
 nextMove :: Engine -> IO Color
 nextMove Engine{game} = do

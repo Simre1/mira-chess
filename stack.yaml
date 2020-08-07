@@ -30,6 +30,8 @@ resolver: lts-16.7
 #   - wai
 packages:
 - .
+
+extra-deps:
 - chessIO
 - reactive-markup/reactive-markup
 - reactive-markup/reactive-markup-gtk

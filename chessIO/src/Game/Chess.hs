@@ -28,6 +28,7 @@ module Game.Chess (
 , positionTree, positionForest
   -- * Chess moves
 , Ply(..)
+, move
   -- ** Converting from/to algebraic notation
 , strictSAN, relaxedSAN, fromSAN, toSAN, unsafeToSAN, fromUCI, toUCI
 , fromPolyglot, toPolyglot
@@ -586,10 +587,10 @@ shiftNNW w = w `unsafeShiftL` 15 .&. notHFile
 --
 -- This function checks if the move is actually legal and throws and error
 -- if it isn't.  See 'unsafeDoPly' for a version that omits the legality check.
-doPly :: Position -> Ply -> Position
+doPly :: Position -> Ply -> Maybe Position
 doPly p m
-  | m `elem` legalPlies p = unsafeDoPly p m
-  | otherwise        = error "Game.Chess.doPly: Illegal move"
+  | m `elem` legalPlies p = Just $ unsafeDoPly p m
+  | otherwise        = Nothing
 
 -- | An unsafe version of 'doPly'.  Only use this if you are sure the given move
 -- can be applied to the position.  This is useful if the move has been generated

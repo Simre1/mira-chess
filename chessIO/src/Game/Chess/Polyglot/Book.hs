@@ -67,6 +67,7 @@ pokeBE p x = go x (sizeOf x) where
   go _ 0 = pure ()
   go !x !n = pokeElemOff p (n-1) (fromIntegral x) *> go (x `shiftR` 8) (n-1)
 
+
 defaultBook, twic :: PolyglotBook
 defaultBook = twic
 twic = fromByteString $(embedFile "./book/twic-9g.bin")

@@ -13,7 +13,7 @@ myRunner :: Runner (GtkElements |-> '[ChessBoard]) IO (GtkM Gtk.Widget)
 myRunner = widgetRunner |-> runChessBoard
 
 runChessBoard :: RunElement ChessBoard IO (GtkM Gtk.Widget)
-runChessBoard (ChessBoard positionData) _ handleEvent = do
+runChessBoard (ChessBoard dynPositionData) _ handleEvent = do
   selectedFieldRef <- liftIO (newIORef Nothing)
   (activeSquare, activateSquare) <- liftIO $ newDynamic Nothing
   let handleButtonClick square = do
@@ -27,8 +27,8 @@ runChessBoard (ChessBoard positionData) _ handleEvent = do
           )
           selectedField
   runMarkup widgetRunner handleEvent $
-    gridLayout (GridOptions 8 8) $
-      makeSquare handleButtonClick activeSquare <$> [A1 .. H8]
+    gridLayout (homogenousRows %% homogenousColumns) $
+      makeSquare handleButtonClick (activeSquare) <$> [A1 .. H8]
   where
     toGridPosition square = GridPosition c (7 - r) 1 1
       where
@@ -37,9 +37,17 @@ runChessBoard (ChessBoard positionData) _ handleEvent = do
       gridChild (toGridPosition square) $
         handleEventIO
           (fmap (const Nothing) . handleButtonClick)
-          $ dynamicMarkup activeSquare $ \active -> button $
-            (if active == Just square
-              then (%% fontColour green)
-              else expandOptions)
-            (text $ T.pack $ show $ piecePositions positionData square)
-              %% (onClick square)
+          $ dynamicMarkup ((,) <$> dynPositionData <*> onlyTriggerOnChange ((Just square ==) <$> activeSquare)) $ \(positionData, active) ->
+            let squareData = piecePositions positionData square
+                squareText = maybe "" (T.pack . show . snd) squareData
+                squareColour = maybe black (\x -> if fst x == White then white else black) squareData
+             in button $
+                  ( if active
+                      then (backgroundColour green %%)
+                      else expandOptions
+                  )
+                    ( onClick square
+                        %% text squareText
+                        %% fontColour squareColour
+                        %% expand True
+                    )

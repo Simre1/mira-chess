@@ -11,9 +11,9 @@ data PositionData = PositionData
 
 data ChessBoard deriving Typeable
 
-data instance Element ChessBoard elems e = e ~ Move => ChessBoard PositionData
+data instance Element ChessBoard elems e = e ~ Move => ChessBoard (Dynamic PositionData)
 
-chessBoard :: PositionData -> Markup '[ChessBoard] '[] (Move)
+chessBoard :: Dynamic PositionData -> Markup '[ChessBoard] '[] (Move)
 chessBoard = toMarkup . ChessBoard
 
 chessPositionToPositionData :: ChessPosition -> PositionData

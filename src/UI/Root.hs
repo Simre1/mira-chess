@@ -10,5 +10,5 @@ import qualified Data.Text as T
 
 root :: AppState Dynamic -> Markup '[Window '[Text]] MyMarkup AppEvent
 root appState = expandMarkup $ 
-  window none $ dynamicMarkup (getChessPosition (Id 0) appState) $ \chessPosition ->
-    DoMove (Id 0) <$> chessBoard (chessPositionToPositionData chessPosition)
+  window none $
+    DoMove (Id 0) <$> chessBoard (chessPositionToPositionData <$> getChessPosition (Id 0) appState)

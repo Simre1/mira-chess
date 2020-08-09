@@ -9,8 +9,14 @@ import ReactiveMarkup
 import ReactiveMarkup.Runners.Gtk
 import UI.MyComponents.ChessBoard
 
+import UI.GtkChessBoard
+
 myRunner :: Runner (GtkElements |-> '[ChessBoard]) IO (GtkM Gtk.Widget)
-myRunner = widgetRunner |-> runChessBoard
+myRunner = widgetRunner |-> runChessBoard2
+
+runChessBoard2 :: RunElement ChessBoard IO (GtkM Gtk.Widget)
+runChessBoard2 (ChessBoard dynChessBoard) _ handleEvent = do
+  customChessBoard dynChessBoard handleEvent
 
 runChessBoard :: RunElement ChessBoard IO (GtkM Gtk.Widget)
 runChessBoard (ChessBoard dynPositionData) _ handleEvent = do
@@ -37,8 +43,8 @@ runChessBoard (ChessBoard dynPositionData) _ handleEvent = do
       gridChild (toGridPosition square) $
         handleEventIO
           (fmap (const Nothing) . handleButtonClick)
-          $ dynamicMarkup ((,) <$> dynPositionData <*> onlyTriggerOnChange ((Just square ==) <$> activeSquare)) $ \(positionData, active) ->
-            let squareData = piecePositions positionData square
+          $ dynamicMarkup ((,) <$> dynPositionData <*> onlyTriggerOnChange ((Just square ==) <$> activeSquare)) $ \(chessPosition, active) ->
+            let squareData = getPiece chessPosition square
                 squareText = maybe "" (T.pack . show . snd) squareData
                 squareColour = maybe black (\x -> if fst x == White then white else black) squareData
              in button $
@@ -51,3 +57,4 @@ runChessBoard (ChessBoard dynPositionData) _ handleEvent = do
                         %% fontColour squareColour
                         %% expand True
                     )
+

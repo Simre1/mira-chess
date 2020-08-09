@@ -36,7 +36,8 @@ extra-deps:
 - reactive-markup/reactive-markup
 - reactive-markup/reactive-markup-gtk
 - reactive-markup/gtk-hotreload
-
+- cairo-0.13.8.1
+- gtk2hs-buildtools-0.13.8.0
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:

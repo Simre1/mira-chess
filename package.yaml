@@ -20,6 +20,10 @@ dependencies:
   - reactive-markup-gtk
   - gtk-hotreload
   - gi-gtk
+  - gi-cairo
+  - cairo
+  - gi-gdk
+  - transformers
 
 executables:
   mira-chess:

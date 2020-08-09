@@ -4,20 +4,15 @@ import ReactiveMarkup
 
 import AppState.Chess
 
-data PositionData = PositionData 
-  { piecePositions :: Square -> Maybe (PieceColour, Piece)
-  , activeColour :: PieceColour
-  }
-
 data ChessBoard deriving Typeable
 
-data instance Element ChessBoard elems e = e ~ Move => ChessBoard (Dynamic PositionData)
+data instance Element ChessBoard elems e = e ~ Move => ChessBoard (Dynamic ChessPosition)
 
-chessBoard :: Dynamic PositionData -> Markup '[ChessBoard] '[] (Move)
+chessBoard :: Dynamic ChessPosition -> Markup '[ChessBoard] '[] (Move)
 chessBoard = toMarkup . ChessBoard
 
-chessPositionToPositionData :: ChessPosition -> PositionData
-chessPositionToPositionData chessBoard = PositionData
-  { piecePositions = getPiece chessBoard
-  , activeColour = getActiveColour chessBoard
-  }
+-- chessPositionToPositionData :: ChessPosition -> PositionData
+-- chessPositionToPositionData chessBoard = PositionData
+--   { piecePositions = getPiece chessBoard
+--   , activeColour = getActiveColour chessBoard
+--   }

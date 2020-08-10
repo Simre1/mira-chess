@@ -31,7 +31,7 @@ data Square
 type Row = Int
 type Column = Int
 
-data Move = Move Square Square deriving (Show, Eq)
+data Move = Move Square Square (Maybe Piece) deriving (Show, Eq)
 
 squareCoordinates :: Square -> (Row, Column)
 squareCoordinates square = (i `div` 8, i `rem` 8)
@@ -69,7 +69,13 @@ getActiveColour (ChessPosition position) = mapColour $ C.color position
     mapColour C.Black = Black
 
 executeMove :: Move -> ChessPosition -> ChessPosition
-executeMove (Move f t) (ChessPosition position) = ChessPosition $ fromMaybe position $ C.doPly position (C.move (mapSquare f) (mapSquare t))
+executeMove move (ChessPosition position) = ChessPosition $ fromMaybe position $ C.doPly position (toPly move)
+
+isLegalMove :: ChessPosition -> Move -> Bool
+isLegalMove (ChessPosition position) move = toPly move `elem` C.legalPlies position
+
+toPly :: Move -> C.Ply
+toPly (Move from to promo) = C.move (mapSquare from) (mapSquare to)
   where
     mapSquare :: Square -> C.Sq
     mapSquare = toEnum . fromEnum

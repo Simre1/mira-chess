@@ -58,13 +58,21 @@ customChessBoard chessPosition handleEvent = do
     clickField :: Gtk.DrawingArea -> IORef (Maybe Square) -> Square -> IO ()
     clickField drawingArea selectedFieldRef square = do
       selectedField <- readIORef selectedFieldRef
+      currentChessPosition <- current (toBehavior chessPosition)
       case selectedField of
         Just selected -> do
-          writeIORef selectedFieldRef Nothing
-          handleEvent (Move selected square)
+          if (isLegalMove currentChessPosition (Move selected square Nothing)) 
+            then do
+              writeIORef selectedFieldRef Nothing
+              handleEvent (Move selected square Nothing)
+            else
+              when (fmap fst (getPiece currentChessPosition square) == Just (getActiveColour currentChessPosition)) $ do
+                writeIORef selectedFieldRef (Just square)
+                Gtk.widgetQueueDraw drawingArea
         Nothing -> do
-          writeIORef selectedFieldRef $ Just square
-          Gtk.widgetQueueDraw drawingArea
+          when (fmap fst (getPiece currentChessPosition square) == Just (getActiveColour currentChessPosition)) $ do
+            writeIORef selectedFieldRef $ Just square
+            Gtk.widgetQueueDraw drawingArea
       pure ()
     calcSquareSize :: MonadIO m => Gtk.DrawingArea -> m Double
     calcSquareSize drawingArea = do

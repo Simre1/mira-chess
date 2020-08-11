@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b6dc8b35f2902e0ef22cafa2fb6eb6073ad48df5ee0cc4e62a082bea947fc053
+-- hash: 69e48edd59ed0926ba828fd68f511666f224629ebfacd7066cc27e7ccd5ef859
 
 name:           mira-chess
 version:        0.1.0.0
@@ -30,13 +30,16 @@ executable mira-chess
       UI.MyComponents.ChessBoard
       UI.MyMarkup
       UI.MyRunner
+      UI.RenderRasterific
       UI.Root
       Paths_mira_chess
   hs-source-dirs:
       src
   default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving
   build-depends:
-      base >=4.7 && <5
+      JuicyPixels
+    , Rasterific
+    , base >=4.7 && <5
     , cairo
     , chessIO
     , containers
@@ -44,8 +47,11 @@ executable mira-chess
     , gi-gdk
     , gi-gtk
     , gtk-hotreload
+    , rasterific-svg
     , reactive-markup
     , reactive-markup-gtk
+    , svg-tree
     , text
     , transformers
+    , vector
   default-language: Haskell2010

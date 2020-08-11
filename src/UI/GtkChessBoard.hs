@@ -1,30 +1,20 @@
 module UI.GtkChessBoard where
 
+import ReactiveMarkup.SimpleEvents
+import AppState.Chess
 import qualified GI.Gtk as Gtk
 import qualified GI.Gdk as Gdk
-import qualified GI.Cairo
-import qualified Graphics.Rendering.Cairo as C
-import Foreign.Ptr (castPtr)
-import Control.Monad.Trans.Reader (ReaderT(runReaderT))
-import Graphics.Rendering.Cairo.Internal (Render(runRender))
-import Graphics.Rendering.Cairo.Types (Cairo(Cairo))
-
-import AppState.Chess
-
-import ReactiveMarkup.SimpleEvents
-
 import ReactiveMarkup.Runners.Gtk
+import Data.IORef
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Graphics.Rasterific
+import Codec.Picture (imageData, convertRGBA8, readImage, PixelRGBA8(..))
 
-import UI.MyComponents.ChessBoard
-import Events
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Control.Monad (when, forM_)
+import UI.RenderRasterific
+import Control.Monad (forM_, when)
+import Graphics.Rasterific.Texture (withSampler, transformTexture, sampledImageTexture, uniformTexture)
+import Graphics.Rasterific.Transformations (translate, scale, applyTransformation)
 import Debug.Trace (traceShowId)
-import Data.IORef (writeIORef, readIORef, IORef, newIORef)
-
-renderWithContext :: GI.Cairo.Context -> Render () -> IO ()
-renderWithContext ct r = Gtk.withManagedPtr ct $ \p ->
-  runReaderT (runRender r) (Cairo (castPtr p))
 
 customChessBoard :: Dynamic ChessPosition -> (Move -> IO ()) -> GtkM Gtk.Widget
 customChessBoard chessPosition handleEvent = do
@@ -37,7 +27,8 @@ customChessBoard chessPosition handleEvent = do
     \context -> do
       squareSize <- calcSquareSize drawingArea
       chessPosition <- current $ toBehavior chessPosition
-      renderWithContext context (rendering selectedFieldRef squareSize chessPosition)
+      drawing <- rendering selectedFieldRef (fromIntegral squareSize) chessPosition
+      renderRasterific (squareSize*8) (squareSize*8) context drawing
       pure True
   Gtk.onWidgetButtonPressEvent drawingArea $ \eventButton -> do
     mouseButton <- Gdk.getEventButtonButton eventButton
@@ -47,7 +38,7 @@ customChessBoard chessPosition handleEvent = do
         squareSize <- calcSquareSize drawingArea
         window <- Gtk.widgetGetToplevel drawingArea
         (_, widgetX, widgetY) <- Gtk.widgetTranslateCoordinates window drawingArea eventX eventY
-        let squareId = (floor $ fromIntegral widgetX / squareSize) + (floor $ 8 - (fromIntegral widgetY / squareSize)) * 8
+        let squareId = (floor $ fromIntegral widgetX / fromIntegral squareSize) + (floor $ 8 - (fromIntegral widgetY / fromIntegral squareSize)) * 8
         if squareId >= 0 && squareId < 64
           then clickField drawingArea selectedFieldRef $ toEnum squareId
           else pure ()
@@ -74,58 +65,73 @@ customChessBoard chessPosition handleEvent = do
             writeIORef selectedFieldRef $ Just square
             Gtk.widgetQueueDraw drawingArea
       pure ()
-    calcSquareSize :: MonadIO m => Gtk.DrawingArea -> m Double
+    calcSquareSize :: MonadIO m => Gtk.DrawingArea -> m Int
     calcSquareSize drawingArea = do
       width <- Gtk.widgetGetAllocatedWidth drawingArea
       height <- Gtk.widgetGetAllocatedHeight drawingArea
-      pure $ fromIntegral (min width height) / 8
-    rendering :: IORef (Maybe Square) -> Double -> ChessPosition -> Render ()
+      pure $ fromIntegral (min width height) `quot` 8
+    rendering :: IORef (Maybe Square) -> Float -> ChessPosition -> IO (Drawing PixelRGBA8 ())
     rendering selectedFieldRef squareSize chessPosition = do
-      C.withTargetSurface $ \surface -> do
-        drawBoard
-        drawSelectedField
-        drawPieces
-        pure ()
+        d1 <- drawBoard 
+        d2 <- drawSelectedField
+        d3 <- drawPieces
+        pure $ d1 >> d2 >> d3
       where
-        drawSelectedField :: Render ()
-        drawSelectedField = do
-          selectedSquare <- liftIO $ readIORef selectedFieldRef
-          liftIO $ print selectedSquare
-          case selectedSquare of
-            Nothing -> pure ()
-            Just square -> do
-                let (r,c) = squareCoordinates square
-                    (x,y) = (squareSize * (fromIntegral c),squareSize * (fromIntegral $ 7-r))
-                C.save
-                C.rectangle x y (squareSize) (squareSize)
-                C.setSourceRGBA 0 1 0 0.3
-                C.fill
-                C.restore
-        drawPieces :: Render ()
-        drawPieces = do
-          C.save
-          forM_ [A1 .. H8] $ \square ->
-            case getPiece chessPosition square of
-              Nothing -> pure ()
-              Just (colour, piece) -> do
-                let (r,c) = squareCoordinates square
-                    (x,y) = (squareSize * (fromIntegral c),squareSize * (fromIntegral $ 7-r))
-                C.newPath
-                C.lineTo (x+squareSize/8) (y+squareSize/2)
-                C.showText $ show piece
-          C.restore
-        drawBoard :: Render ()
-        drawBoard = do
-          C.save
+        drawBoard :: IO (Drawing PixelRGBA8 ())
+        drawBoard = pure $
           forM_ [A1 .. H8] $ \square -> do
             let (r,c) = squareCoordinates square
-                (x,y) = (squareSize * (fromIntegral c),squareSize * (fromIntegral $ 7-r))
-            C.newPath
-            C.rectangle x y (squareSize) (squareSize)
-            if even (r + c)
-              then C.setSourceRGB 1 1 1
-              else C.setSourceRGB 0.5 0.5 0.5
-            C.fill
-            C.setSourceRGB 0 0 0
-          C.restore
-      
+            let colour = if even (r+c)
+                  then PixelRGBA8 255 255 255 255
+                  else PixelRGBA8 120 120 120 255
+            withTexture (uniformTexture $ colour) $ do
+              fill $ transform (applyTransformation $ scale squareSize squareSize) $ rectangle (fromIntegral <$> V2 c r) 1 1
+        drawSelectedField :: IO (Drawing PixelRGBA8 ())
+        drawSelectedField = do
+          maybeSelected <- readIORef selectedFieldRef
+          pure $ case maybeSelected of
+            Nothing -> pure ()
+            Just square -> do
+              let (r,c) = squareCoordinates square
+              withTexture (uniformTexture $ PixelRGBA8 0 255 0 120) $ do
+                fill $ transform (applyTransformation $ scale squareSize squareSize) $ rectangle (fromIntegral <$> V2 c (7-r)) 1 1
+
+        drawPieces :: IO (Drawing PixelRGBA8 ())
+        drawPieces = do
+          foldMap drawFigure [A1 .. H8]
+          where 
+            drawFigure :: Square -> IO (Drawing PixelRGBA8 ())
+            drawFigure square = do
+              let maybePiece = getPiece chessPosition square
+              case maybePiece of
+                Nothing -> pure $ pure ()
+                Just (c,p) -> do
+                  image <- readImage $ mapToFilePath (c,p)
+                  case image of
+                    Left err -> error err
+                    Right dynamicImage -> do
+                      let (r,c) = squareCoordinates square
+                          texture = withSampler SamplerRepeat $ transformTexture (scale (110/squareSize) (110/squareSize)) $ sampledImageTexture $ convertRGBA8 dynamicImage
+                      print (r,c)
+                      pure $ withTexture texture $ do
+                        fill $ rectangle ((squareSize*).fromIntegral <$> V2 c (7-r)) 110 110
+                      -- pure $ withTexture () $ do
+                      --    fill $ rectangle (((squareSize *) . fromIntegral) <$> V2 c (7 - r)) squareSize squareSize
+              where
+                mapToFilePath :: (PieceColour, Piece) -> String
+                mapToFilePath x = case x of
+                  (White, King) -> "assets/board/merida/white_king.png"
+                  (White, Pawn) -> "assets/board/merida/white_pawn.png"
+                  (White, Bishop) -> "assets/board/merida/white_bishop.png"
+                  (White, Knight) -> "assets/board/merida/white_knight.png"
+                  (White, Rook) -> "assets/board/merida/white_rook.png"
+                  (White, Queen) -> "assets/board/merida/white_queen.png"
+                  (Black, King) -> "assets/board/merida/black_king.png"
+                  (Black, Pawn) -> "assets/board/merida/black_pawn.png"
+                  (Black, Bishop) -> "assets/board/merida/black_bishop.png"
+                  (Black, Knight) -> "assets/board/merida/black_knight.png"
+                  (Black, Rook) -> "assets/board/merida/black_rook.png"
+                  (Black, Queen) -> "assets/board/merida/black_queen.png"
+
+ 
+

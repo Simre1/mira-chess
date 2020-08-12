@@ -24,11 +24,11 @@ dependencies:
   - cairo
   - gi-gdk
   - transformers
-  - Rasterific
   - JuicyPixels
   - vector
-  - rasterific-svg
-  - svg-tree
+  - diagrams-core
+  - diagrams-cairo
+  - diagrams-lib
 
 executables:
   mira-chess:

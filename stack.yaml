@@ -38,7 +38,10 @@ extra-deps:
 - reactive-markup/gtk-hotreload
 - cairo-0.13.8.1
 - gtk2hs-buildtools-0.13.8.0
-# Dependency packages to be pulled from upstream that are not in the resolver.
+- diagrams-cairo-1.4.1.1
+- pango-0.13.8.1
+- glib-0.13.8.1
+  # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #

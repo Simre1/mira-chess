@@ -7,14 +7,14 @@ import qualified GI.Gdk as Gdk
 import ReactiveMarkup.Runners.Gtk
 import Data.IORef
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Graphics.Rasterific
-import Codec.Picture (imageData, convertRGBA8, readImage, PixelRGBA8(..))
+import Codec.Picture (DynamicImage, imageData, convertRGBA8, readImage, PixelRGBA8(..))
+import UI.RenderDiagram
 
-import UI.RenderRasterific
-import Control.Monad (forM_, when)
-import Graphics.Rasterific.Texture (withSampler, transformTexture, sampledImageTexture, uniformTexture)
-import Graphics.Rasterific.Transformations (translate, scale, applyTransformation)
-import Debug.Trace (traceShowId)
+import Diagrams.Backend.Cairo (Cairo)
+import Diagrams.Prelude hiding (Dynamic)
+import Diagrams.TwoD.Image (embeddedImage, image)
+import Control.Monad (when)
+
 
 customChessBoard :: Dynamic ChessPosition -> (Move -> IO ()) -> GtkM Gtk.Widget
 customChessBoard chessPosition handleEvent = do
@@ -28,7 +28,7 @@ customChessBoard chessPosition handleEvent = do
       squareSize <- calcSquareSize drawingArea
       chessPosition <- current $ toBehavior chessPosition
       drawing <- rendering selectedFieldRef (fromIntegral squareSize) chessPosition
-      renderRasterific (squareSize*8) (squareSize*8) context drawing
+      renderDiagram (squareSize*8) (squareSize*8) context drawing
       pure True
   Gtk.onWidgetButtonPressEvent drawingArea $ \eventButton -> do
     mouseButton <- Gdk.getEventButtonButton eventButton
@@ -70,53 +70,35 @@ customChessBoard chessPosition handleEvent = do
       width <- Gtk.widgetGetAllocatedWidth drawingArea
       height <- Gtk.widgetGetAllocatedHeight drawingArea
       pure $ fromIntegral (min width height) `quot` 8
-    rendering :: IORef (Maybe Square) -> Float -> ChessPosition -> IO (Drawing PixelRGBA8 ())
-    rendering selectedFieldRef squareSize chessPosition = do
-        d1 <- drawBoard 
-        d2 <- drawSelectedField
-        d3 <- drawPieces
-        pure $ d1 >> d2 >> d3
+    rendering :: IORef (Maybe Square) -> Float -> ChessPosition -> IO (Diagram Cairo)
+    rendering selectedFieldRef squareSize chessPosition = 
+      liftA3 (\p f b -> atop p $ atop f b) drawPieces drawSelectedField drawBoard
       where
-        drawBoard :: IO (Drawing PixelRGBA8 ())
-        drawBoard = pure $
-          forM_ [A1 .. H8] $ \square -> do
-            let (r,c) = squareCoordinates square
-            let colour = if even (r+c)
-                  then PixelRGBA8 255 255 255 255
-                  else PixelRGBA8 120 120 120 255
-            withTexture (uniformTexture $ colour) $ do
-              fill $ transform (applyTransformation $ scale squareSize squareSize) $ rectangle (fromIntegral <$> V2 c r) 1 1
-        drawSelectedField :: IO (Drawing PixelRGBA8 ())
-        drawSelectedField = do
-          maybeSelected <- readIORef selectedFieldRef
-          pure $ case maybeSelected of
-            Nothing -> pure ()
-            Just square -> do
-              let (r,c) = squareCoordinates square
-              withTexture (uniformTexture $ PixelRGBA8 0 255 0 120) $ do
-                fill $ transform (applyTransformation $ scale squareSize squareSize) $ rectangle (fromIntegral <$> V2 c (7-r)) 1 1
-
-        drawPieces :: IO (Drawing PixelRGBA8 ())
+        drawPieces :: IO (Diagram Cairo)
         drawPieces = do
-          foldMap drawFigure [A1 .. H8]
+          board :: [[Diagram Cairo]] <- sequenceA $ fmap sequenceA $ fmap drawPiece <$>
+                [ [A8 .. H8]
+                , [A7 .. H7]
+                , [A6 .. H6]
+                , [A5 .. H5]
+                , [A4 .. H4]
+                , [A3 .. H3]
+                , [A2 .. H2]
+                , [A1 .. H1]
+                ]
+          pure $ foldr (===) mempty $ ((foldr (|||) mempty) <$> board)
           where 
-            drawFigure :: Square -> IO (Drawing PixelRGBA8 ())
-            drawFigure square = do
+            drawPiece :: Square -> IO (Diagram Cairo)
+            drawPiece square = do
               let maybePiece = getPiece chessPosition square
               case maybePiece of
-                Nothing -> pure $ pure ()
+                Nothing -> pure $ rect 1 1 # lw 0
                 Just (c,p) -> do
-                  image <- readImage $ mapToFilePath (c,p)
-                  case image of
+                  img :: Either String DynamicImage <- readImage $ mapToFilePath (c,p)
+                  pure $ case img of
                     Left err -> error err
-                    Right dynamicImage -> do
-                      let (r,c) = squareCoordinates square
-                          texture = withSampler SamplerRepeat $ transformTexture (scale (110/squareSize) (110/squareSize)) $ sampledImageTexture $ convertRGBA8 dynamicImage
-                      print (r,c)
-                      pure $ withTexture texture $ do
-                        fill $ rectangle ((squareSize*).fromIntegral <$> V2 c (7-r)) 110 110
-                      -- pure $ withTexture () $ do
-                      --    fill $ rectangle (((squareSize *) . fromIntegral) <$> V2 c (7 - r)) squareSize squareSize
+                    Right (dynamicImage) -> scale (1/110) $
+                      image $ embeddedImage dynamicImage
               where
                 mapToFilePath :: (PieceColour, Piece) -> String
                 mapToFilePath x = case x of
@@ -132,6 +114,30 @@ customChessBoard chessPosition handleEvent = do
                   (Black, Knight) -> "assets/board/merida/black_knight.png"
                   (Black, Rook) -> "assets/board/merida/black_rook.png"
                   (Black, Queen) -> "assets/board/merida/black_queen.png"
-
- 
-
+        drawSelectedField :: IO (Diagram Cairo)
+        drawSelectedField = do
+          selectedSquare <- readIORef selectedFieldRef
+          pure $ case selectedSquare of
+            Nothing -> mempty
+            Just square -> 
+              let (r,c) = squareCoordinates square
+              in rect 1 1 # lw 0 # fc green # translate (fromIntegral <$> r2 (c, -7+r))
+        drawBoard :: IO (Diagram Cairo)
+        drawBoard = pure $
+          let board = 
+                [ [A8 .. H8]
+                , [A7 .. H7]
+                , [A6 .. H6]
+                , [A5 .. H5]
+                , [A4 .. H4]
+                , [A3 .. H3]
+                , [A2 .. H2]
+                , [A1 .. H1]
+                ]
+          in foldr (===) mempty $ (foldr (|||) mempty . fmap drawSquare) <$> board
+          where 
+            drawSquare square = 
+              let (r,c) = squareCoordinates square
+              in rect 1 1 # lw 0 # if (even $ r + c)
+                then fc white
+                else fc grey

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8eb78f0e78090de02e1f526b511e742715154a7bc7e334d297964b66ef36a56f
+-- hash: c2f908fc33d340f10175697d8b1310c6e3d9dc5181abe603c19f8584b67ea9ab
 
 name:           mira-chess
 version:        0.1.0.0
@@ -26,7 +26,6 @@ executable mira-chess
       AppState.Chess
       Events
       Handler
-      UI.GtkChessBoard
       UI.MyComponents.ChessBoard
       UI.MyMarkup
       UI.MyRunner

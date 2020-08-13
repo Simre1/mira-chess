@@ -5,56 +5,120 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.IORef
 import qualified Data.Text as T
 import qualified GI.Gtk as Gtk
-import ReactiveMarkup
+import ReactiveMarkup hiding (atop)
 import ReactiveMarkup.Runners.Gtk
 import UI.MyComponents.ChessBoard
 
-import UI.GtkChessBoard
+import Diagrams.Backend.Cairo (Cairo)
 
-myRunner :: Runner (GtkElements |-> '[ChessBoard]) IO (GtkM Gtk.Widget)
+import Data.Functor.Identity
+import Diagrams.Prelude hiding (Dynamic)
+import Codec.Picture.Types (DynamicImage)
+import Codec.Picture (readImage)
+import Diagrams.TwoD.Image (embeddedImage)
+import System.IO.Unsafe (unsafePerformIO)
+
+
+myRunner :: Runner (GtkElements |-> '[ChessBoard]) (IO ()) (GtkM Gtk.Widget)
 myRunner = widgetRunner |-> runChessBoard
 
-runChessBoard :: Runner '[ChessBoard] IO (GtkM Gtk.Widget)
+runChessBoard :: Runner '[ChessBoard] (IO ()) (GtkM Gtk.Widget)
 runChessBoard = eventRun $ \(ChessBoard dynChessBoard) handleEvent -> do
-  customChessBoard dynChessBoard handleEvent
+  runMarkup widgetRunner handleEvent (newChessBoard dynChessBoard) --customChessBoard dynChessBoard handleEvent
 
--- runChessBoard :: RunElement ChessBoard IO (GtkM Gtk.Widget)
--- runChessBoard (ChessBoard dynPositionData) _ handleEvent = do
---   selectedFieldRef <- liftIO (newIORef Nothing)
---   (activeSquare, activateSquare) <- liftIO $ newDynamic Nothing
---   let handleButtonClick square = do
---         selectedField <- readIORef selectedFieldRef
---         maybe
---           (writeIORef selectedFieldRef (Just square) *> triggerEvent activateSquare (Just square))
---           ( \previousSquare -> do
---               handleEvent (Move previousSquare square Nothing)
---               writeIORef selectedFieldRef Nothing
---               triggerEvent activateSquare Nothing
---           )
---           selectedField
---   runMarkup widgetRunner handleEvent $
---     gridLayout (homogenousRows %% homogenousColumns) $
---       makeSquare handleButtonClick (activeSquare) <$> [A1 .. H8]
---   where
---     toGridPosition square = GridPosition c (7 - r) 1 1
---       where
---         (r, c) = squareCoordinates square
---     makeSquare handleButtonClick activeSquare square =
---       gridChild (toGridPosition square) $
---         handleEventIO
---           (fmap (const Nothing) . handleButtonClick)
---           $ dynamicMarkup ((,) <$> dynPositionData <*> onlyTriggerOnChange ((Just square ==) <$> activeSquare)) $ \(chessPosition, active) ->
---             let squareData = getPiece chessPosition square
---                 squareText = maybe "" (T.pack . show . snd) squareData
---                 squareColour = maybe black (\x -> if fst x == White then white else black) squareData
---              in button $
---                   ( if active
---                       then (backgroundColour green %%)
---                       else expandOptions
---                   )
---                     ( onClick square
---                         %% text squareText
---                         %% fontColour squareColour
---                         %% expand True
---                     )
-
+newChessBoard :: Dynamic ChessPosition -> SimpleMarkup GtkElements Move
+newChessBoard chessPosition = expandMarkup $
+  dynamicStateIO Nothing update $ \selectedField ->
+      let dynamicDiagram = rendering <$> liftA2 (,) selectedField chessPosition
+      in drawingBoard (drawDynamicDiagram dynamicDiagram %% mouseClickWithPosition id %% aspectRatio 1)
+  where
+    update :: Maybe Square -> (Double,Double) -> IO (Maybe (Maybe Square), Maybe Move)
+    update selectedField (x,y) = do
+      let squareId = (floor $ x * 8) + (floor $ 8 - 8 * y) * 8
+      case squareId >= 0 && squareId < 64 of
+        False -> pure (Nothing, Nothing)
+        True -> do
+            let square = toEnum squareId
+            currentChessPosition <- current (toBehavior chessPosition)
+            pure $ case selectedField of
+              Just selected -> do
+                if (isLegalMove currentChessPosition (Move selected square Nothing)) 
+                  then (Just Nothing, Just $ Move selected square Nothing)
+                  else
+                    if (fmap fst (getPiece currentChessPosition square) == Just (getActiveColour currentChessPosition))
+                      then (Just (Just square), Nothing)
+                      else (Nothing, Nothing)
+              Nothing -> do
+                if (fmap fst (getPiece currentChessPosition square) == Just (getActiveColour currentChessPosition))
+                  then (Just (Just square), Nothing)
+                  else (Nothing, Nothing)
+    rendering :: (Maybe Square,ChessPosition) -> (Diagram Cairo)
+    rendering (selectedSquare,chessPosition) = 
+      drawPieces `atop` drawSelectedField `atop` drawBoard
+      where
+        drawPieces :: (Diagram Cairo)
+        drawPieces = 
+          let board :: [[Diagram Cairo]] = fmap drawPiece <$>
+                [ [A8 .. H8]
+                , [A7 .. H7]
+                , [A6 .. H6]
+                , [A5 .. H5]
+                , [A4 .. H4]
+                , [A3 .. H3]
+                , [A2 .. H2]
+                , [A1 .. H1]
+                ]
+          in foldr (===) mempty $ ((foldr (|||) mempty) <$> board)
+          where 
+            drawPiece :: Square -> Diagram Cairo
+            drawPiece square = unsafePerformIO $ do
+              let maybePiece = getPiece chessPosition square
+              case maybePiece of
+                Nothing -> pure $ rect 1 1 # lw 0
+                Just (c,p) -> do
+                  img :: Either String DynamicImage <- readImage $ mapToFilePath (c,p)
+                  pure $ case img of
+                    Left err -> error err
+                    Right (dynamicImage) -> scale (1/110) $
+                      image $ embeddedImage dynamicImage
+              where
+                mapToFilePath :: (PieceColour, Piece) -> String
+                mapToFilePath x = case x of
+                  (White, King) -> "assets/board/merida/white_king.png"
+                  (White, Pawn) -> "assets/board/merida/white_pawn.png"
+                  (White, Bishop) -> "assets/board/merida/white_bishop.png"
+                  (White, Knight) -> "assets/board/merida/white_knight.png"
+                  (White, Rook) -> "assets/board/merida/white_rook.png"
+                  (White, Queen) -> "assets/board/merida/white_queen.png"
+                  (Black, King) -> "assets/board/merida/black_king.png"
+                  (Black, Pawn) -> "assets/board/merida/black_pawn.png"
+                  (Black, Bishop) -> "assets/board/merida/black_bishop.png"
+                  (Black, Knight) -> "assets/board/merida/black_knight.png"
+                  (Black, Rook) -> "assets/board/merida/black_rook.png"
+                  (Black, Queen) -> "assets/board/merida/black_queen.png"
+        drawSelectedField :: (Diagram Cairo)
+        drawSelectedField = do
+          case selectedSquare of
+            Nothing -> mempty
+            Just square -> 
+              let (r,c) = squareCoordinates square
+              in rect 1 1 # lw 0 # fc green # translate (fromIntegral <$> r2 (c, -7+r))
+        drawBoard :: (Diagram Cairo)
+        drawBoard =
+          let board = 
+                [ [A8 .. H8]
+                , [A7 .. H7]
+                , [A6 .. H6]
+                , [A5 .. H5]
+                , [A4 .. H4]
+                , [A3 .. H3]
+                , [A2 .. H2]
+                , [A1 .. H1]
+                ]
+          in foldr (===) mempty $ (foldr (|||) mempty . fmap drawSquare) <$> board
+          where 
+            drawSquare square = 
+              let (r,c) = squareCoordinates square
+              in rect 1 1 # lw 0 # if (even $ r + c)
+                then fc white
+                else fc grey

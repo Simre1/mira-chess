@@ -11,4 +11,5 @@ import UI.MyRunner
 main :: IO ()
 main = do
   (appStateD, appStateT) <- initialAppState
-  withCustomRunner (runMarkupWithTwo windowRunner myRunner (handleEvents appStateD appStateT)) (root appStateD)
+  run <- myRunner
+  withCustomRunner (runMarkupWithTwo windowRunner run (handleEvents appStateD appStateT)) (root appStateD)

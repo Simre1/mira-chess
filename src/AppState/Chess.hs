@@ -4,7 +4,7 @@ import qualified Game.Chess as C
 import Control.Exception (try, catch)
 import Data.Maybe (fromMaybe)
 
-data PieceColour = White | Black deriving (Eq, Show)
+data PieceColour = White | Black deriving (Eq, Show, Ord)
 
 type HalfMoves = Int
 
@@ -15,7 +15,7 @@ data Piece
   | Knight
   | Rook
   | Pawn 
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 data Square
   = A1 | B1 | C1 | D1 | E1 | F1 | G1 | H1

@@ -15,4 +15,3 @@ handleEvents appState triggers event =
     DoMove chessId move -> do
        currentPositions <- current $ toBehavior $ chessPositions appState
        triggerEvent (chessPositions triggers) $ M.alter (fmap (executeMove move)) chessId currentPositions
-    _ -> pure ()

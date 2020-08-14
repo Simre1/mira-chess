@@ -52,27 +52,6 @@ initChessEnv = do
         ((Black, Queen), "assets/board/merida/black_queen.png")
       ]
 
---                   img :: Either String DynamicImage <- readImage $ mapToFilePath (c,p)
---                   pure $ case img of
---                     Left err -> error err
---                     Right (dynamicImage) -> scale (1/110) $
---                       image $ embeddedImage dynamicImage
---               where
---                 mapToFilePath :: (PieceColour, Piece) -> String
---                 mapToFilePath x = case x of
---                   (White, King) -> "assets/board/merida/white_king.png"
---                   (White, Pawn) -> "assets/board/merida/white_pawn.png"
---                   (White, Bishop) -> "assets/board/merida/white_bishop.png"
---                   (White, Knight) -> "assets/board/merida/white_knight.png"
---                   (White, Rook) -> "assets/board/merida/white_rook.png"
---                   (White, Queen) -> "assets/board/merida/white_queen.png"
---                   (Black, King) -> "assets/board/merida/black_king.png"
---                   (Black, Pawn) -> "assets/board/merida/black_pawn.png"
---                   (Black, Bishop) -> "assets/board/merida/black_bishop.png"
---                   (Black, Knight) -> "assets/board/merida/black_knight.png"
---                   (Black, Rook) -> "assets/board/merida/black_rook.png"
---                   (Black, Queen) -> "assets/board/merida/black_queen.png"
-
 askEnv :: (ChessEnv -> a) -> ChessM a
 askEnv f = ChessM $ asks f
 
@@ -148,7 +127,7 @@ newChessBoard getPieceImage chessPosition = expandMarkup $
             Nothing -> mempty
             Just square ->
               let (r, c) = squareCoordinates square
-               in rect 1 1 # lw 0 # fc green # translate (fromIntegral <$> r2 (c, -7 + r))
+               in rect 1 1 # lw 0 # fillColor (black `withOpacity` 0.3) # translate (fromIntegral <$> r2 (c, -7 + r))
         drawBoard :: (Diagram Cairo)
         drawBoard =
           let board =
@@ -168,4 +147,5 @@ newChessBoard getPieceImage chessPosition = expandMarkup $
                in rect 1 1 # lw 0
                     # if (even $ r + c)
                       then fc white
-                      else fc grey
+                      else fc $ sRGB24 210 160 110
+-- "#f4a460"

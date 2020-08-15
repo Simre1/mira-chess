@@ -148,4 +148,3 @@ newChessBoard getPieceImage chessPosition = expandMarkup $
                     # if (even $ r + c)
                       then fc white
                       else fc $ sRGB24 210 160 110
--- "#f4a460"

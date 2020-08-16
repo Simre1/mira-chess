@@ -20,17 +20,14 @@ dependencies:
   - reactive-markup-gtk
   - gtk-hotreload
   - gi-gtk
-  - gi-cairo
-  - cairo
   - gi-gdk
   - transformers
   - JuicyPixels
   - vector
-  - diagrams-core
-  - diagrams-cairo
   - diagrams-lib
   - unordered-containers
   - hashable
+  - optics-core
 
 executables:
   mira-chess:

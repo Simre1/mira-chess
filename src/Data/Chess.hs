@@ -43,7 +43,7 @@ squareCoordinates :: Square -> (Row, Column)
 squareCoordinates square = (i `div` 8, i `rem` 8)
   where i = fromEnum square
 
-data ChessPosition = ChessPosition C.Position
+data ChessPosition = ChessPosition C.Position deriving (Eq, Generic)
 
 getPiece :: ChessPosition -> Square -> Maybe (PieceColour, Piece)
 getPiece (ChessPosition position) square = 
@@ -80,8 +80,22 @@ executeMove move (ChessPosition position) = ChessPosition $ fromMaybe position $
 isLegalMove :: ChessPosition -> Move -> Bool
 isLegalMove (ChessPosition position) move = toPly move `elem` C.legalPlies position
 
+startPosition :: ChessPosition
+startPosition = ChessPosition C.startpos
+
 toPly :: Move -> C.Ply
-toPly (Move from to promo) = C.move (mapSquare from) (mapSquare to)
+toPly (Move from to promo) = 
+  let ply = C.move (mapSquare from) (mapSquare to)
+  in maybe ply (C.promoteTo ply . mapPiece) promo
   where
     mapSquare :: Square -> C.Sq
     mapSquare = toEnum . fromEnum
+    mapPiece :: Piece -> C.PieceType
+    mapPiece p = case p of
+      King -> C.King
+      Queen -> C.Queen
+      Bishop -> C.Bishop
+      Knight -> C.Knight
+      Rook -> C.Rook
+      Pawn -> C.Pawn
+

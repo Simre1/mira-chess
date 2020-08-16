@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2bc50b29b4735fc29e277b663eba2ceb6580066f58b27f2fc7a2f8ca3cf6cc04
+-- hash: 01513df6c19850e9e4cc0aa4a85365b84ec2cf5d75bb5ce41fd342be2299b5d9
 
 name:           mira-chess
 version:        0.1.0.0
@@ -24,6 +24,8 @@ executable mira-chess
   other-modules:
       AppState
       Data.Chess
+      Data.FunctorMap
+      Data.IdStore
       Events
       Handler
       View.Components.ChessBoard
@@ -38,17 +40,14 @@ executable mira-chess
   build-depends:
       JuicyPixels
     , base >=4.7 && <5
-    , cairo
     , chessIO
     , containers
-    , diagrams-cairo
-    , diagrams-core
     , diagrams-lib
-    , gi-cairo
     , gi-gdk
     , gi-gtk
     , gtk-hotreload
     , hashable
+    , optics-core
     , reactive-markup
     , reactive-markup-gtk
     , text

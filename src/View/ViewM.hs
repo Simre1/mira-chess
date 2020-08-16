@@ -6,8 +6,7 @@ import Control.Monad.Trans.Reader (ReaderT(..), asks)
 import qualified Data.HashMap.Strict as HM
 
 import Data.Chess
-import Codec.Picture.Types (DynamicImage)
-import Codec.Picture (readImage)
+import Codec.Picture (readImage, DynamicImage)
 import Data.Maybe (fromJust)
 
 newtype ViewM a = ViewM (ReaderT ViewEnv GtkM a) deriving (Functor, Applicative, Monad, MonadIO)

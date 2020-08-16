@@ -29,6 +29,7 @@ module Game.Chess (
   -- * Chess moves
 , Ply(..)
 , move
+, promoteTo
   -- ** Converting from/to algebraic notation
 , strictSAN, relaxedSAN, fromSAN, toSAN, unsafeToSAN, fromUCI, toUCI
 , fromPolyglot, toPolyglot

@@ -18,7 +18,7 @@ chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessPosit
 chessBoardMarkup getPieceImage chessPosition =
   dynamicStateIO Nothing update $ \selectedField ->
     let dynamicDiagram = rendering <$> liftA2 (,) selectedField chessPosition
-     in drawingBoard (drawDynamicDiagram dynamicDiagram %% mouseClickWithPosition id %% aspectRatio 1)
+     in drawingBoard (drawDynamicDiagram dynamicDiagram // mouseClickWithPosition id // aspectRatio 1)
   where
     update :: Maybe Square -> (Double, Double) -> IO (Maybe (Maybe Square), Maybe Move)
     update selectedField (x, y) = do

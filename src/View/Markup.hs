@@ -1,8 +1,8 @@
-module UI.MyMarkup where
+module View.Markup where
 
 import ReactiveMarkup.Runners.Gtk
 import ReactiveMarkup
-import UI.MyComponents.ChessBoard
+import View.Components.ChessBoard
 
 type MyMarkup = GtkElements |-> '[ChessBoard]
 

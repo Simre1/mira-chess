@@ -1,7 +1,7 @@
 module Events where
 
 import qualified Data.Text as T
-import AppState.Chess
+import Data.Chess
 import AppState
 
 data AppEvent

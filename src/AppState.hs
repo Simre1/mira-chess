@@ -3,13 +3,11 @@ module AppState where
 import ReactiveMarkup.SimpleEvents
 import Data.Maybe
 
-import UI.MyComponents.ChessBoard
-
 import qualified Game.Chess as C
 
 import qualified Data.Map as M
 
-import AppState.Chess
+import Data.Chess
 
 newtype Id = Id Int deriving (Eq, Ord, Show)
 

@@ -1,76 +1,21 @@
-module UI.MyRunner where
+module View.Components.ChessBoard where
 
-import AppState.Chess
-import Codec.Picture (readImage)
-import Codec.Picture.Types (DynamicImage)
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Trans.Reader
-import Data.IORef
-import qualified Data.Text as T
-import Data.Functor.Identity
-import Diagrams.Backend.Cairo (Cairo)
+import Codec.Picture (DynamicImage)
+import Data.Chess
 import Diagrams.Prelude hiding (Dynamic)
 import Diagrams.TwoD.Image (embeddedImage)
-import qualified GI.Gtk as Gtk
 import ReactiveMarkup hiding (atop)
-import ReactiveMarkup.Runners.Gtk
-import System.IO.Unsafe (unsafePerformIO)
-import UI.MyComponents.ChessBoard
-import qualified Data.Map as M
-import Data.Maybe (fromJust)
+import ReactiveMarkup.Runners.Gtk (Cairo)
 
-myRunner :: IO (Runner (GtkElements |-> '[ChessBoard]) (IO ()) (GtkM Gtk.Widget))
-myRunner = do
-  chessEnv <- initChessEnv
-  pure $ widgetRunner |-> mapRunnerResult (fromChessM chessEnv) liftGtkM runChessBoard
-  where
-    fromChessM :: ChessEnv -> ChessM a -> GtkM a
-    fromChessM chessEnv (ChessM m) = runReaderT m chessEnv
+data ChessBoard deriving (Typeable)
 
-initChessEnv :: IO ChessEnv
-initChessEnv = do
-  pieceImages <- traverse readImage $ snd <$> pieceImageLocations
-  let pieceImageMap = M.fromList $ zipWith (,) (fst <$> pieceImageLocations) (handleError <$> pieceImages)
-  pure $ ChessEnv (fromJust . flip M.lookup pieceImageMap)
-  where
-    handleError :: Either String a -> a
-    handleError (Left e) = error e
-    handleError (Right a) = a
-    pieceImageLocations :: [((PieceColour, Piece), String)]
-    pieceImageLocations =
-      [ ((White, King), "assets/board/merida/white_king.png"),
-        ((White, Pawn), "assets/board/merida/white_pawn.png"),
-        ((White, Bishop), "assets/board/merida/white_bishop.png"),
-        ((White, Knight), "assets/board/merida/white_knight.png"),
-        ((White, Rook), "assets/board/merida/white_rook.png"),
-        ((White, Queen), "assets/board/merida/white_queen.png"),
-        ((Black, King), "assets/board/merida/black_king.png"),
-        ((Black, Pawn), "assets/board/merida/black_pawn.png"),
-        ((Black, Bishop), "assets/board/merida/black_bishop.png"),
-        ((Black, Knight), "assets/board/merida/black_knight.png"),
-        ((Black, Rook), "assets/board/merida/black_rook.png"),
-        ((Black, Queen), "assets/board/merida/black_queen.png")
-      ]
+data instance Element ChessBoard elems e = e ~ Move => ChessBoard (Dynamic ChessPosition)
 
-askEnv :: (ChessEnv -> a) -> ChessM a
-askEnv f = ChessM $ asks f
+chessBoard :: Dynamic ChessPosition -> Markup '[ChessBoard] '[] (Move)
+chessBoard = toMarkup . ChessBoard
 
-newtype ChessM a = ChessM (ReaderT ChessEnv GtkM a) deriving (Functor, Applicative, Monad, MonadIO)
-
-liftGtkM :: GtkM a -> ChessM a
-liftGtkM = ChessM . ReaderT . const
-
-data ChessEnv = ChessEnv
-  { pieceImages :: (PieceColour, Piece) -> DynamicImage
-  }
-
-runChessBoard :: Runner '[ChessBoard] (IO ()) (ChessM Gtk.Widget)
-runChessBoard = eventRun $ \(ChessBoard dynChessBoard) handleEvent -> do
-  getPieceImage <- askEnv pieceImages
-  liftGtkM $ runMarkup widgetRunner handleEvent (newChessBoard getPieceImage dynChessBoard) --customChessBoard dynChessBoard handleEvent
-
-newChessBoard :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessPosition -> SimpleMarkup GtkElements Move
-newChessBoard getPieceImage chessPosition = expandMarkup $
+chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessPosition -> Markup '[DynamicStateIO] '[DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio]] Move
+chessBoardMarkup getPieceImage chessPosition =
   dynamicStateIO Nothing update $ \selectedField ->
     let dynamicDiagram = rendering <$> liftA2 (,) selectedField chessPosition
      in drawingBoard (drawDynamicDiagram dynamicDiagram %% mouseClickWithPosition id %% aspectRatio 1)
@@ -148,3 +93,9 @@ newChessBoard getPieceImage chessPosition = expandMarkup $
                     # if (even $ r + c)
                       then fc white
                       else fc $ sRGB24 210 160 110
+
+-- chessPositionToPositionData :: ChessPosition -> PositionData
+-- chessPositionToPositionData chessBoard = PositionData
+--   { piecePositions = getPiece chessBoard
+--   , activeColour = getActiveColour chessBoard
+--   }

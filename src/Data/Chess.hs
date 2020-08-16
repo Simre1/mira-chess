@@ -1,10 +1,14 @@
-module AppState.Chess where
+module Data.Chess where
 
 import qualified Game.Chess as C
 import Control.Exception (try, catch)
 import Data.Maybe (fromMaybe)
+import Data.Hashable
+import GHC.Generics (Generic)
 
-data PieceColour = White | Black deriving (Eq, Show, Ord)
+data PieceColour = White | Black deriving (Eq, Show, Ord, Generic)
+
+instance Hashable PieceColour where
 
 type HalfMoves = Int
 
@@ -15,7 +19,9 @@ data Piece
   | Knight
   | Rook
   | Pawn 
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Show, Ord, Generic)
+
+instance Hashable Piece where
 
 data Square
   = A1 | B1 | C1 | D1 | E1 | F1 | G1 | H1

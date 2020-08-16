@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c2f908fc33d340f10175697d8b1310c6e3d9dc5181abe603c19f8584b67ea9ab
+-- hash: 2bc50b29b4735fc29e277b663eba2ceb6580066f58b27f2fc7a2f8ca3cf6cc04
 
 name:           mira-chess
 version:        0.1.0.0
@@ -23,18 +23,18 @@ executable mira-chess
   main-is: Main.hs
   other-modules:
       AppState
-      AppState.Chess
+      Data.Chess
       Events
       Handler
-      UI.MyComponents.ChessBoard
-      UI.MyMarkup
-      UI.MyRunner
-      UI.RenderDiagram
-      UI.Root
+      View.Components.ChessBoard
+      View.Markup
+      View.Root
+      View.Runner
+      View.ViewM
       Paths_mira_chess
   hs-source-dirs:
       src
-  default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving
+  default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving DeriveGeneric
   build-depends:
       JuicyPixels
     , base >=4.7 && <5
@@ -48,9 +48,11 @@ executable mira-chess
     , gi-gdk
     , gi-gtk
     , gtk-hotreload
+    , hashable
     , reactive-markup
     , reactive-markup-gtk
     , text
     , transformers
+    , unordered-containers
     , vector
   default-language: Haskell2010

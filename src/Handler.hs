@@ -4,7 +4,7 @@ import ReactiveMarkup.SimpleEvents
 
 import qualified Data.Map as M
 
-import AppState.Chess
+import Data.Chess
 import AppState
 import Events
 

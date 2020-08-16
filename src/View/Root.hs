@@ -1,12 +1,11 @@
-module UI.Root where 
+module View.Root where 
 
 import ReactiveMarkup
 import AppState
 import Events
-import UI.MyMarkup
-import UI.MyComponents.ChessBoard
+import View.Markup
+import View.Components.ChessBoard
 import qualified Data.Text as T
-
 
 root :: AppState Dynamic -> Markup '[Window '[Text]] MyMarkup AppEvent
 root appState = expandMarkup $ 

@@ -28,6 +28,11 @@ dependencies:
   - unordered-containers
   - hashable
   - optics-core
+  - selda
+  - selda-sqlite
+  - bytestring
+  - serialise
+  - cursor
 
 executables:
   mira-chess:
@@ -51,3 +56,5 @@ default-extensions:
   - FunctionalDependencies
   - GeneralizedNewtypeDeriving
   - DeriveGeneric
+  - NamedFieldPuns
+  - PatternSynonyms

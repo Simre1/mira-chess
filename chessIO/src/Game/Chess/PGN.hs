@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 module Game.Chess.PGN (
-  readPGNFile, gameFromForest, PGN(..), Game, Outcome(..)
+  readPGNFile, gameFromForest, PGN(..), Game, Outcome(..), PlyData(..)
 , hPutPGN, pgnDoc, RAVOrder, breadthFirst, depthFirst, gameDoc
 , weightedForest) where
 
@@ -52,7 +52,7 @@ instance Pretty Outcome where
 
 data PlyData = PlyData {
   prefixNAG :: ![Int]
-, ply :: !Ply
+, getPly :: !Ply
 , suffixNAG :: ![Int]
 } deriving (Eq, Show)
 
@@ -190,7 +190,7 @@ moveDoc ro pos (o,ts) = (fillSep $ go pos True ts <> [pretty o]) <> line where
     | otherwise
     = pnag <> (san:snag) <> rav <> go pos' (not . null $ rav) (subForest t)
    where
-    pl = ply . rootLabel $ t
+    pl = getPly . rootLabel $ t
     san = pretty $ unsafeToSAN pos pl
     pos' = unsafeDoPly pos pl
     pnag = nag <$> prefixNAG (rootLabel t)
@@ -207,8 +207,8 @@ weightedForest (PGN games) = merge . concatMap rate $ snd <$> filter ok games
     w c | o == Win c = 1
         | o == Win (opponent c) = -1
         | o == Draw = 1 % 2
-    f pos (Node a ts') = Node (w (color pos), ply a) $
-      f (unsafeDoPly pos (ply a)) <$> ts'
+    f pos (Node a ts') = Node (w (color pos), getPly a) $
+      f (unsafeDoPly pos (getPly a)) <$> ts'
   trunk [] = []
   trunk (x:_) = [x { subForest = trunk (subForest x)}]
   merge [] = []

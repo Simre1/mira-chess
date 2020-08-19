@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 01513df6c19850e9e4cc0aa4a85365b84ec2cf5d75bb5ce41fd342be2299b5d9
+-- hash: 6bb4d018f3b68ab1e23fed7beb6576e09b91dd8a75582ed6e87204d3f382580c
 
 name:           mira-chess
 version:        0.1.0.0
@@ -24,6 +24,8 @@ executable mira-chess
   other-modules:
       AppState
       Data.Chess
+      Data.Chess_old
+      Data.Database
       Data.FunctorMap
       Data.IdStore
       Events
@@ -36,12 +38,14 @@ executable mira-chess
       Paths_mira_chess
   hs-source-dirs:
       src
-  default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving DeriveGeneric
+  default-extensions: OverloadedLabels OverloadedStrings GADTs MultiParamTypeClasses TypeFamilies TypeOperators DataKinds DeriveFunctor FlexibleContexts FlexibleInstances ScopedTypeVariables RankNTypes TypeApplications FunctionalDependencies GeneralizedNewtypeDeriving DeriveGeneric NamedFieldPuns PatternSynonyms
   build-depends:
       JuicyPixels
     , base >=4.7 && <5
+    , bytestring
     , chessIO
     , containers
+    , cursor
     , diagrams-lib
     , gi-gdk
     , gi-gtk
@@ -50,6 +54,9 @@ executable mira-chess
     , optics-core
     , reactive-markup
     , reactive-markup-gtk
+    , selda
+    , selda-sqlite
+    , serialise
     , text
     , transformers
     , unordered-containers

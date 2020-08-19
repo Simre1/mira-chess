@@ -13,6 +13,6 @@ makeRunner = do
   pure $ widgetRunner |-> mapRunnerResult (runViewM viewEnv) liftGtkM runChessBoard
 
 runChessBoard :: Runner '[ChessBoard] (IO ()) (ViewM Gtk.Widget)
-runChessBoard = eventRun $ \(ChessBoard dynChessBoard) handleEvent -> do
+runChessBoard = eventRun $ \(ChessBoard dynChessGame) handleEvent -> do
   getPieceImage <- askEnv pieceImages
-  liftGtkM $ runMarkup widgetRunner handleEvent (chessBoardMarkup getPieceImage dynChessBoard)
+  liftGtkM $ runMarkup widgetRunner handleEvent (chessBoardMarkup getPieceImage dynChessGame)

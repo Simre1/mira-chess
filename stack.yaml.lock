@@ -39,6 +39,20 @@ packages:
       sha256: 1167575db8823b7a9f5fbaebdbc0ea5cef54301e442754ec256ba9371bd388e7
   original:
     hackage: glib-0.13.8.1
+- completed:
+    hackage: selda-sqlite-0.1.7.1@sha256:d750cb189dfd5049628cd1dd0a5d7abda95bdac4a451e0973fc9fde80e70ed17,1257
+    pantry-tree:
+      size: 301
+      sha256: 2b1228ff4b880d23c1ba86d83cc495665be4d67155f8603df37df9bf67d46744
+  original:
+    hackage: selda-sqlite-0.1.7.1
+- completed:
+    hackage: direct-sqlite-2.3.26@sha256:04e835402f1508abca383182023e4e2b9b86297b8533afbd4e57d1a5652e0c23,3718
+    pantry-tree:
+      size: 770
+      sha256: 11874ab21e10c5b54cd1e02a037b677dc1e2ee9986f38c599612c56654dc01c3
+  original:
+    hackage: direct-sqlite-2.3.26
 snapshots:
 - completed:
     size: 531932

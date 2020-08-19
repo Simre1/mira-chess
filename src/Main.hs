@@ -11,17 +11,18 @@ import qualified GI.Gtk as Gtk
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import HotReload (hotReloadMarkupWithoutAsking)
 import Data.FunctorMap
+import Optics.Core
 
 main :: IO ()
 main = initializeChessApp >>= runGtkWidget
 
 initializeChessApp :: IO (GtkM Gtk.Widget)
 initializeChessApp = do
-  (appStateD, appStateT) <- initialAppState
+  (appState, modelTriggers) <- initializeAppState
   runner <- makeRunner
   let handle = 
-        handleEvents (functorMap toBehavior appStateD) appStateT
-  pure $ runMarkupWithTwo windowRunner runner handle (root appStateD)
+        handleEvents (functorMap toBehavior appState) modelTriggers
+  pure $ runMarkupWithTwo windowRunner runner handle (root $ appState ^. model)
 
 hotReload :: IO ()
 hotReload = initializeChessApp >>= hotReloadMarkupWithoutAsking

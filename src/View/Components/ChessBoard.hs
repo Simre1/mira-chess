@@ -2,36 +2,44 @@ module View.Components.ChessBoard where
 
 import Codec.Picture (DynamicImage)
 import Data.Chess
-import Diagrams.Prelude hiding (Dynamic)
+import Diagrams.Prelude hiding (Dynamic, none, text)
 import Diagrams.TwoD.Image (embeddedImage)
 import ReactiveMarkup hiding (atop)
 import ReactiveMarkup.Runners.Gtk (Cairo)
 
 data ChessBoard deriving (Typeable)
 
-data instance Element ChessBoard elems e = e ~ Move => ChessBoard (Dynamic ChessPosition)
+data instance Element ChessBoard elems e = e ~ ChessBoardEvent => ChessBoard (Dynamic ChessGame)
 
-chessBoard :: Dynamic ChessPosition -> Markup '[ChessBoard] '[] (Move)
+data ChessBoardEvent
+  = MakeMove Move
+  | PreviousMove
+  | NextMove
+
+chessBoard :: Dynamic ChessGame -> Markup '[ChessBoard] '[] (ChessBoardEvent)
 chessBoard = toMarkup . ChessBoard
 
-chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessPosition -> Markup '[DynamicStateIO] '[DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio]] Move
-chessBoardMarkup getPieceImage chessPosition =
-  dynamicStateIO Nothing update $ \selectedField ->
-    let dynamicDiagram = rendering <$> liftA2 (,) selectedField chessPosition
-     in drawingBoard (drawDynamicDiagram dynamicDiagram // mouseClickWithPosition id // aspectRatio 1)
+chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessGame -> Markup '[List '[]] '[DynamicStateIO, Button '[Text, Click], DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio]] ChessBoardEvent
+chessBoardMarkup getPieceImage chessPosition = list' none $ emptyMarkupBuilder
+  +-> chessBoardWidget
+  +-> button (text "Previous" // onClick PreviousMove)
   where
-    update :: Maybe Square -> (Double, Double) -> IO (Maybe (Maybe Square), Maybe Move)
+    chessBoardWidget = dynamicStateIO Nothing update $ \selectedField ->
+      let dynamicDiagram = rendering <$> liftA2 (,) selectedField (fst . currentPosition <$> chessPosition)
+      in drawingBoard (drawDynamicDiagram dynamicDiagram // mouseClickWithPosition id // aspectRatio 1)
+    update :: Maybe Square -> (Double, Double) -> IO (Maybe (Maybe Square), Maybe ChessBoardEvent)
     update selectedField (x, y) = do
       let squareId = (floor $ x * 8) + (floor $ 8 - 8 * y) * 8
       case squareId >= 0 && squareId < 64 of
         False -> pure (Nothing, Nothing)
         True -> do
           let square = toEnum squareId
-          currentChessPosition <- current (toBehavior chessPosition)
+          currentChessGame <- current (toBehavior chessPosition)
+          let currentChessPosition = fst $ currentPosition currentChessGame
           pure $ case selectedField of
             Just selected -> do
-              if (isLegalMove currentChessPosition (Move selected square Nothing))
-                then (Just Nothing, Just $ Move selected square Nothing)
+              if (isLegalMove currentChessPosition (makeMove selected square Nothing))
+                then (Just Nothing, Just $ MakeMove $ makeMove selected square Nothing)
                 else
                   if (fmap fst (getPiece currentChessPosition square) == Just (getActiveColour currentChessPosition))
                     then (Just (Just square), Nothing)

@@ -41,6 +41,8 @@ extra-deps:
 - diagrams-cairo-1.4.1.1
 - pango-0.13.8.1
 - glib-0.13.8.1
+- selda-sqlite-0.1.7.1
+- direct-sqlite-2.3.26
   # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:

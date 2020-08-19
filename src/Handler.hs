@@ -10,10 +10,18 @@ import Data.IdStore
 import AppState
 import Events
 
-handleEvents :: AppState Behavior -> AppState EventTrigger -> AppEvent -> IO ()
+import View.Components.ChessBoard (ChessBoardEvent(..))
+
+handleEvents :: AppState Behavior -> Model EventTrigger -> AppEvent -> IO ()
 handleEvents appState triggers event = 
   case event of
     Log t -> print t
-    DoMove chessId move -> do
-      chessPosition <- current $ appState ^. chessPositions %% lookupId chessId
-      triggerEvent (triggers ^. chessPositions %% lookupId chessId) $ executeMove move chessPosition
+    ChessBoardEvent chessId chessBoardEvent -> do
+      chessGame <- current $ appState ^. model % chessGames % lookupId chessId
+      case chessBoardEvent of
+        MakeMove move ->
+          triggerEvent (triggers ^. chessGames %% lookupId chessId) $ focusNextMove $ insertMainMoveAtCurrent move chessGame
+        NextMove ->
+          triggerEvent (triggers ^. chessGames %% lookupId chessId) $ focusNextMove chessGame
+        PreviousMove ->
+          triggerEvent (triggers ^. chessGames %% lookupId chessId) $ focusPreviousMove chessGame

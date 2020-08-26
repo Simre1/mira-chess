@@ -2,50 +2,45 @@ module AppState where
 
 import ReactiveMarkup.SimpleEvents
 
-import Data.Chess
-import Data.IdStore
-import Data.FunctorMap
+import Data.StateControl
 import Data.Database
-import Optics.Core
-import Database.Selda (def)
+import Data.Id
+import qualified Data.Map as M
+import Data.Chess
+import Data.FunctorMap
+import Data.Empty
 
 data AppState f = AppState
-  { database' :: Database
-  , model' :: Model f
+  { database :: Database
+  , model :: Model f
   }
 
 data Model f = Model
-  { chessGames' :: IdStore ChessGame f
+  { chessGames :: f (M.Map (Id ChessGame) (f ChessGame))
+  , tabs :: f (M.Map (Id (Tab Empty)) (Tab f))
   }
 
-instance FunctorMap AppState where
-  functorMap morph appState@(AppState {model'}) = appState {model' = functorMap morph model'}
+data Tab f = Tab
+  { tabId :: Id (Tab Empty)
+  }
 
 instance FunctorMap Model where
-  functorMap morph (Model cp) = Model $ functorMap morph cp
+  functorMap f (Model games tabs) = Model (fmap f <$> f games) (fmap (functorMap f) <$> f tabs)
 
-chessGames :: Getter (Model f) (IdStore ChessGame f)
-chessGames = to chessGames'
+instance FunctorMap AppState where
+  functorMap f state@(AppState {model}) = state {model = functorMap f model}
 
-model :: Lens' (AppState f) (Model f)
-model = lens getter setter
-  where getter (AppState {model'}) = model'
-        setter state mod = state {model' = mod}
+instance FunctorMap Tab where
+  functorMap _ (Tab i) = Tab i
 
-database :: Lens' (AppState f) Database
-database = lens getter setter
-  where getter (AppState {database'}) = database'
-        setter appState db = appState {database' = db}
-
-initializeAppState :: IO (AppState Dynamic, Model EventTrigger)
+initializeAppState :: IO (AppState StateControl)
 initializeAppState = do
-  (chessPositionsD, chessPositionsT) <- newIdStore newGame
+  games <- newStateControl M.empty
   database <- createDatabase "database"
-  games <- runDatabaseM database $ do
-    insertChessGames [DBChessGame def "Greetings"]
-    getChessGame
-  print games
-  pure (AppState database $ Model chessPositionsD, Model chessPositionsT)
+  g <- newStateControl newGame
+  tabs <- newStateControl M.empty
+  modifyStateControl games (M.insert (Id 0) g)
+  pure (AppState database (Model games tabs))
 
 closeAppState :: AppState Dynamic -> IO ()
-closeAppState appState = closeDatabase $ appState ^. database
+closeAppState appState = closeDatabase $ database appState

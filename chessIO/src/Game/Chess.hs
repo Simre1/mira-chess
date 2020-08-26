@@ -20,7 +20,7 @@ module Game.Chess (
   Color(..), opponent
 , Sq(..), isLight, isDark
 , PieceType(..), Castle(..)
-, Position, startpos, color, moveNumber, halfMoveClock, pieceAt, inCheck
+, Position(..), startpos, color, moveNumber, halfMoveClock, pieceAt, inCheck
 , castlingRights, canCastleKingside, canCastleQueenside
   -- ** Converting from/to Forsyth-Edwards-Notation
 , fromFEN, toFEN

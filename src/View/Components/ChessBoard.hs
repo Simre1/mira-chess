@@ -19,10 +19,13 @@ data ChessBoardEvent
 chessBoard :: Dynamic ChessGame -> Markup '[ChessBoard] '[] (ChessBoardEvent)
 chessBoard = toMarkup . ChessBoard
 
-chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessGame -> Markup '[List '[]] '[DynamicStateIO, Button '[Text, Click], DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio]] ChessBoardEvent
+chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessGame -> Markup '[List '[]] '[DynamicStateIO, FlowLayout '[], DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio], Button '[Text, Click]] ChessBoardEvent
 chessBoardMarkup getPieceImage chessPosition = list' none $ emptyMarkupBuilder
   +-> chessBoardWidget
-  +-> button (text "Previous" // onClick PreviousMove)
+  +-> flowLayout' none (emptyMarkupBuilder
+    +-> button (text "Previous" // onClick PreviousMove)
+    +-> button (text "Next" // onClick NextMove)
+    )
   where
     chessBoardWidget = dynamicStateIO Nothing update $ \selectedField ->
       let dynamicDiagram = rendering <$> liftA2 (,) selectedField (fst . currentPosition <$> chessPosition)

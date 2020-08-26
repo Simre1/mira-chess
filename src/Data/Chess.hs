@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 module Data.Chess where
 
 import Data.Foldable (Foldable (foldl'))
@@ -9,8 +10,10 @@ import qualified Data.Tree as T
 import GHC.Generics (Generic)
 import qualified Game.Chess as C
 import qualified Game.Chess.PGN as C
+import qualified Game.Chess.QuadBitboard as C (QuadBitboard(..))
 import Data.Hashable (hashUsing, Hashable(..))
 import qualified Data.Text as T
+import Codec.Serialise.Class (Serialise)
 
 newtype PieceColour = PieceColour {unwrapPieceColour :: C.Color} deriving (Eq, Show, Generic)
 
@@ -137,7 +140,34 @@ type Column = Int
 
 newtype ChessPosition = ChessPosition {unwrapChessPosition :: C.Position} deriving (Eq, Generic)
 
+instance Serialise ChessPosition
+
+deriving instance Generic C.Position
+deriving instance Generic C.QuadBitboard
+deriving instance Generic C.Color
+instance Serialise C.Position where
+instance Serialise C.Color where
+instance Serialise C.QuadBitboard where
+
+
+
 newtype Outcome = Outcome {unwrapOutcome :: C.Outcome} deriving (Eq, Show, Generic)
+
+instance Enum Outcome where
+  toEnum 0 = Undecided
+  toEnum 1 = Draw
+  toEnum 2 = BlackWin
+  toEnum 3 = WhiteWin
+  fromEnum Undecided = 0
+  fromEnum Draw = 1
+  fromEnum BlackWin = 2
+  fromEnum WhiteWin = 3
+
+pattern WhiteWin, BlackWin, Draw, Undecided :: Outcome
+pattern WhiteWin = Outcome (C.Win C.White)
+pattern BlackWin = Outcome (C.Win C.Black)
+pattern Draw = Outcome (C.Draw)
+pattern Undecided = Outcome (C.Undecided)
 
 
 getPiece :: ChessPosition -> Square -> Maybe (PieceColour, Piece)
@@ -205,10 +235,10 @@ currentPosition :: ChessGame -> (ChessPosition, T.Text)
 currentPosition game = 
   fromJust $ positionAtMove (currentMove game) game
 
-focusMove :: MoveIndex -> ChessGame -> ChessGame
+focusMove :: MoveIndex -> ChessGame -> Maybe ChessGame
 focusMove index game
-  | HM.member index $ moves game = game {currentMove = index}
-  | otherwise = game
+  | HM.member index $ moves game = Just $ game {currentMove = index}
+  | otherwise = Nothing
 
 insertMainMoveAtCurrent :: Move -> ChessGame -> ChessGame 
 insertMainMoveAtCurrent m g = fromMaybe g $ do
@@ -217,19 +247,27 @@ insertMainMoveAtCurrent m g = fromMaybe g $ do
   let h = HM.insert (nextIndex $ currentMove g) (c, T.pack . show . unwrapMove $ m) $ moves g
   pure $ g {moves = h}
 
-focusNextMove :: ChessGame -> ChessGame
+focusNextMove :: ChessGame -> Maybe ChessGame
 focusNextMove g = focusMove (nextIndex (currentMove g)) g
 
-focusPreviousMove :: ChessGame -> ChessGame
+focusPreviousMove :: ChessGame -> Maybe ChessGame
 focusPreviousMove g = focusMove (previousIndex (currentMove g)) g
+
+deleteLine :: MoveIndex -> ChessGame -> ChessGame
+deleteLine mI game = 
+  if HM.member mI $ moves game
+    then deleteLine (nextIndex mI) $ game {moves = HM.delete mI (moves game)}
+    else game
 
 foldGame :: (MoveIndex -> b -> b) -> b -> ChessGame -> b
 foldGame f initial game = foldl' (\b index -> f index b) initial $ sort $ HM.keys $ moves game
 
 newGame :: ChessGame
-newGame = ChessGame (HM.insert (MainMove (-1)) (startPosition, "start") $ HM.empty) (MainMove (-1)) (Outcome C.Undecided)
+newGame = ChessGame (HM.insert (MainMove 0) (startPosition, "start") $ HM.empty) (MainMove 0) (Outcome C.Undecided)
 
 data MoveIndex = Variation Int HalfMoves MoveIndex | MainMove HalfMoves deriving (Eq, Show, Generic)
+
+instance Serialise MoveIndex
 
 instance Ord MoveIndex where
   (MainMove i1) `compare` (MainMove i2) = i1 `compare` i2
@@ -280,10 +318,10 @@ nextIndex (MainMove i) = MainMove $ succ i
 nextIndex (Variation i n mi) = Variation i n $ nextIndex mi
 
 previousIndex :: MoveIndex -> MoveIndex
-previousIndex (MainMove i) = MainMove $ min 0 $ pred i
-previousIndex (Variation i n (MainMove 0)) = MainMove n
+previousIndex (MainMove i) = MainMove $ max 0 $ pred i
+previousIndex (Variation i n (MainMove 1)) = MainMove n
 previousIndex (Variation i n mi) = Variation i n $ previousIndex mi
 
 newVariation :: Int -> MoveIndex -> MoveIndex
-newVariation x (MainMove i) = Variation x i $ MainMove 0
+newVariation x (MainMove i) = Variation x i $ MainMove 1
 newVariation x (Variation i n m) = Variation i n $ newVariation x m

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6bb4d018f3b68ab1e23fed7beb6576e09b91dd8a75582ed6e87204d3f382580c
+-- hash: 261260f5680bbd920338ff7e5ac5026204656d2fe0f37d146bc46b1a8c232c53
 
 name:           mira-chess
 version:        0.1.0.0
@@ -26,8 +26,10 @@ executable mira-chess
       Data.Chess
       Data.Chess_old
       Data.Database
+      Data.Empty
       Data.FunctorMap
-      Data.IdStore
+      Data.Id
+      Data.StateControl
       Events
       Handler
       View.Components.ChessBoard

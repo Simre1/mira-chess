@@ -3,7 +3,6 @@ module Data.Chess where
 
 import Data.Foldable (Foldable (foldl'))
 import qualified Data.HashMap.Strict as HM
-import Data.List.NonEmpty (NonEmpty (..))
 import Data.List (sort)
 import Data.Maybe (fromMaybe, fromJust, catMaybes)
 import qualified Data.Tree as T

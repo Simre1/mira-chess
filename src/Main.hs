@@ -2,7 +2,6 @@ module Main where
 
 import ReactiveMarkup.Runners.Gtk
 import ReactiveMarkup
-import AppState
 import Handler
 import View.Root
 import View.Runner
@@ -10,20 +9,25 @@ import View.Runner
 import qualified GI.Gtk as Gtk
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import HotReload (hotReloadMarkupWithoutAsking)
-import Data.FunctorMap
+import Control.FunctorMap
 import Optics.Core
 import Data.StateControl
+import Events
+
+import State.Root
 
 main :: IO ()
 main = initializeChessApp >>= runGtkWidget
 
 initializeChessApp :: IO (GtkM Gtk.Widget)
 initializeChessApp = do
-  controlAppState <- initializeAppState
+  rootState <- initializeRootState
   runner <- makeRunner
   let handle = 
-        handleEvents (controlAppState)
-  pure $ runMarkupWithTwo windowRunner runner handle (root $ functorMap stateControlToDynamic $ model controlAppState)
+        handleEvents rootState
+  handle $ CreateTab "My cool tab"
+  handle $ CreateTab "Second tab"
+  pure $ runMarkupWithTwo windowRunner runner handle (root $ functorMap stateControlToDynamic $ model rootState)
 
 hotReload :: IO ()
 hotReload = initializeChessApp >>= hotReloadMarkupWithoutAsking

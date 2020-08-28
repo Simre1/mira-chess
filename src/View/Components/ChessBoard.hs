@@ -2,35 +2,32 @@ module View.Components.ChessBoard where
 
 import Codec.Picture (DynamicImage)
 import Data.Chess
-import Diagrams.Prelude hiding (Dynamic, none, text)
+import Diagrams.Prelude hiding (Dynamic, noOps, text)
 import Diagrams.TwoD.Image (embeddedImage)
+import Events
 import ReactiveMarkup hiding (atop)
 import ReactiveMarkup.Runners.Gtk (Cairo)
 
 data ChessBoard deriving (Typeable)
 
-data instance Element ChessBoard elems e = e ~ ChessBoardEvent => ChessBoard (Dynamic ChessGame)
+data instance Element ChessBoard elems e = e ~ ChessGameEvent => ChessBoard (Dynamic ChessGame)
 
-data ChessBoardEvent
-  = MakeMove Move
-  | PreviousMove
-  | NextMove
-
-chessBoard :: Dynamic ChessGame -> Markup '[ChessBoard] '[] (ChessBoardEvent)
+chessBoard :: Dynamic ChessGame -> Markup '[ChessBoard] '[] (ChessGameEvent)
 chessBoard = toMarkup . ChessBoard
 
-chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessGame -> Markup '[List '[]] '[DynamicStateIO, FlowLayout '[], DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio], Button '[Text, Click]] ChessBoardEvent
-chessBoardMarkup getPieceImage chessPosition = list' none $ emptyMarkupBuilder
-  +-> chessBoardWidget
-  +-> flowLayout' none (emptyMarkupBuilder
-    +-> button (text "Previous" // onClick PreviousMove)
-    +-> button (text "Next" // onClick NextMove)
-    )
+chessBoardMarkup :: ((PieceColour, Piece) -> DynamicImage) -> Dynamic ChessGame -> Markup '[List '[]] '[DynamicStateIO, FlowLayout '[], DrawingBoard '[DrawDynamicDiagram Cairo, MouseClickWithPosition, AspectRatio], Button '[Text, Click]] ChessGameEvent
+chessBoardMarkup getPieceImage chessPosition =
+  list noOps $
+    chessBoardWidget
+      +: [ flowLayout noOps $
+             button (text "Previous" // onClick PreviousMove)
+               +: [button (text "Next" // onClick NextMove)]
+         ]
   where
     chessBoardWidget = dynamicStateIO Nothing update $ \selectedField ->
       let dynamicDiagram = rendering <$> liftA2 (,) selectedField (fst . currentPosition <$> chessPosition)
-      in drawingBoard (drawDynamicDiagram dynamicDiagram // mouseClickWithPosition id // aspectRatio 1)
-    update :: Maybe Square -> (Double, Double) -> IO (Maybe (Maybe Square), Maybe ChessBoardEvent)
+       in drawingBoard (drawDynamicDiagram dynamicDiagram // mouseClickWithPosition id // aspectRatio 1)
+    update :: Maybe Square -> (Double, Double) -> IO (Maybe (Maybe Square), Maybe ChessGameEvent)
     update selectedField (x, y) = do
       let squareId = (floor $ x * 8) + (floor $ 8 - 8 * y) * 8
       case squareId >= 0 && squareId < 64 of

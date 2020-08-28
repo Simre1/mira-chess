@@ -1,3 +1,7 @@
 module Data.Id where
 
-newtype Id a = Id Int deriving (Eq, Ord, Show)
+import Data.Empty
+
+newtype Id (a :: *) = Id Int deriving (Eq, Ord, Show)
+
+type IdF f = Id (f Empty)

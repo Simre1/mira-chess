@@ -2,11 +2,20 @@ module Events where
 
 import qualified Data.Text as T
 import Data.Chess
-import AppState
 import Data.Id
+import State.Tab
+import Data.Typeable
 
-import View.Components.ChessBoard (ChessBoardEvent)
-
-data AppEvent
+data RootEvent
   = Log T.Text
-  | ChessBoardEvent (Id ChessGame) ChessBoardEvent
+  | CreateTab T.Text
+  | TabEvent (IdF Tab) TabEvent
+
+data ChessGameEvent
+  = MakeMove Move
+  | PreviousMove
+  | NextMove
+
+data TabEvent
+  = SelectTab (IdF Tab)
+  | ChessGameEvent ChessGameEvent

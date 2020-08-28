@@ -15,6 +15,28 @@ modifyStateControl stateControl f = do
   v <- getStateControl stateControl
   putStateControl stateControl $ f v
 
+modifyStateControl' :: StateControl a -> (a -> (a,b)) -> IO b
+modifyStateControl' stateControl f = do
+  v <- getStateControl stateControl
+  let (v',b) = f v
+  putStateControl stateControl v'
+  pure b
+
+modifyStateControlIO :: StateControl a -> (a -> IO a) -> IO ()
+modifyStateControlIO stateControl f = do
+  v <- getStateControl stateControl
+  f v >>= putStateControl stateControl
+
+modifyStateControlIO' :: StateControl a -> (a -> IO (a,b)) -> IO b
+modifyStateControlIO' stateControl f = do
+  v <- getStateControl stateControl
+  (v',b) <- f v
+  putStateControl stateControl v'
+  pure b
+
+
+
+
 getStateControl :: StateControl a -> IO a
 getStateControl (StateControl d _) = current $ toBehavior d
 
